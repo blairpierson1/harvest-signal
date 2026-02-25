@@ -1,6 +1,8 @@
 """Signal generation logic for soft commodities based on weather data."""
 
-from app.models import Signal, Confidence
+from __future__ import annotations
+
+from app.models import Signal, Confidence, ProducerCountry, WeatherRisk
 
 
 # Thresholds for signal generation
@@ -88,10 +90,13 @@ def generate_condition_summary(analysis: dict) -> str:
 
 
 def generate_commodity_signal(
-    commodity: str, regions: list[dict]
+    commodity: str,
+    regions: list[dict],
+    producers: list[ProducerCountry] | None = None,
 ) -> tuple[Signal, Confidence, str, str]:
     """
     Generate a composite signal for a commodity across all its growing regions.
+    Also factors in country-level weather alerts from top producing countries.
 
     Returns: (signal, confidence, key_driver, rationale)
     """
@@ -171,7 +176,7 @@ def generate_commodity_signal(
         confidence = Confidence.LOW
 
     else:
-        # Normal conditions
+        # Normal conditions from region data — but check producer-level alerts
         signal = Signal.NEUTRAL
         key_driver = "Normal weather across growing regions"
         rationale = (
@@ -179,5 +184,61 @@ def generate_commodity_signal(
             f"seasonal norms. No significant supply disruption expected."
         )
         confidence = Confidence.MEDIUM
+
+    # --- Producer-level weather alert boost ---
+    # If the base signal is still Neutral, check if producer countries have
+    # Watch/Alert conditions that should elevate the signal.
+    if producers and signal == Signal.NEUTRAL:
+        signal, confidence, key_driver, rationale = _apply_producer_boost(
+            commodity, signal, confidence, key_driver, rationale, producers
+        )
+
+    return signal, confidence, key_driver, rationale
+
+
+def _apply_producer_boost(
+    commodity: str,
+    signal: Signal,
+    confidence: Confidence,
+    key_driver: str,
+    rationale: str,
+    producers: list[ProducerCountry],
+) -> tuple[Signal, Confidence, str, str]:
+    """Boost the signal when producer-country weather alerts indicate supply risk."""
+    alert_countries = [
+        p for p in producers if p.weather_risk == WeatherRisk.ALERT
+    ]
+    watch_countries = [
+        p for p in producers if p.weather_risk == WeatherRisk.WATCH
+    ]
+
+    alert_share = sum(p.share_percent for p in alert_countries)
+    watch_share = sum(p.share_percent for p in watch_countries)
+    stressed_share = alert_share + watch_share
+
+    if alert_share >= 15 or len(alert_countries) >= 2:
+        # Significant alert conditions — elevate to Bullish
+        worst = max(alert_countries, key=lambda p: p.share_percent)
+        signal = Signal.BULLISH
+        confidence = Confidence.MEDIUM if alert_share >= 25 else Confidence.LOW
+        key_driver = f"Weather alert in {worst.country} ({worst.risk_detail})"
+        rationale = (
+            f"Adverse weather across key {commodity.lower()} producing countries "
+            f"({', '.join(p.country for p in alert_countries)}) covering "
+            f"{alert_share:.0f}% of global output signals supply-side risk."
+        )
+    elif stressed_share >= 20 or (len(watch_countries) >= 2 and watch_share >= 10):
+        # Broad watch conditions — elevate to mild Bullish
+        worst = max(
+            watch_countries + alert_countries, key=lambda p: p.share_percent
+        )
+        signal = Signal.BULLISH
+        confidence = Confidence.LOW
+        key_driver = f"Weather stress in {worst.country} ({worst.risk_detail})"
+        rationale = (
+            f"Weather watch/alert conditions across {commodity.lower()} producing "
+            f"countries covering {stressed_share:.0f}% of global output suggest "
+            f"emerging supply risk."
+        )
 
     return signal, confidence, key_driver, rationale

@@ -38,9 +38,10 @@ async def get_signals():
 
         signals = []
         for commodity, regions in weather_data.items():
-            # Generate signal
+            # Generate signal (pass producer data so country-level alerts influence signal)
+            commodity_producers = producer_data.get(commodity, [])
             signal, confidence, key_driver, rationale = generate_commodity_signal(
-                commodity, regions
+                commodity, regions, producers=commodity_producers
             )
 
             # Build region weather models with condition summaries
