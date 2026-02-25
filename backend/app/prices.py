@@ -1,0 +1,177 @@
+"""Price trend data for soft commodities.
+
+Coffee uses Alpha Vantage (dedicated commodity endpoint).
+Sugar and Cocoa use Yahoo Finance (Alpha Vantage lacks proper support for these).
+"""
+
+import asyncio
+import os
+
+import httpx
+
+from app.models import PriceTrend
+
+ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
+YAHOO_FINANCE_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
+
+# Routing table: which API to use for each commodity.
+COMMODITY_CONFIG: dict[str, dict[str, str]] = {
+    "Coffee": {"source": "alpha_vantage", "function": "COFFEE"},
+    "Sugar": {"source": "yahoo", "symbol": "SB=F"},
+    "Cocoa": {"source": "yahoo", "symbol": "CC=F"},
+}
+
+
+def _get_api_key() -> str | None:
+    """Read the Alpha Vantage API key from environment."""
+    return os.environ.get("ALPHA_VANTAGE_API_KEY")
+
+
+async def _fetch_alpha_vantage_price(
+    commodity: str, config: dict[str, str]
+) -> PriceTrend:
+    """Fetch price from Alpha Vantage commodity endpoint (Coffee)."""
+    api_key = _get_api_key()
+    if not api_key:
+        return _get_estimated_price(commodity)
+
+    try:
+        params = {
+            "function": config["function"],
+            "interval": "daily",
+            "apikey": api_key,
+        }
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(ALPHA_VANTAGE_BASE_URL, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+        # Check for API error / rate-limit messages
+        if "Information" in data or "Error Message" in data or "Note" in data:
+            return _get_estimated_price(commodity)
+
+        data_points = data.get("data", [])
+        # Filter out entries with "." as value (missing data)
+        valid_points = [
+            p for p in data_points if p.get("value") and p["value"] != "."
+        ]
+
+        if len(valid_points) < 2:
+            return _get_estimated_price(commodity)
+
+        current_value = float(valid_points[0]["value"])
+        previous_value = float(valid_points[1]["value"])
+
+        if previous_value > 0:
+            change_pct = (
+                (current_value - previous_value) / previous_value
+            ) * 100
+            direction = (
+                "up" if change_pct > 0 else "down" if change_pct < 0 else "flat"
+            )
+        else:
+            change_pct = 0.0
+            direction = "flat"
+
+        return PriceTrend(
+            current_price=round(current_value, 2),
+            change_percent=round(change_pct, 2),
+            direction=direction,
+            source="alpha_vantage",
+        )
+
+    except Exception:
+        return _get_estimated_price(commodity)
+
+
+async def _fetch_yahoo_price(
+    commodity: str, config: dict[str, str]
+) -> PriceTrend:
+    """Fetch price from Yahoo Finance chart endpoint (Sugar, Cocoa)."""
+    try:
+        symbol = config["symbol"]
+        url = f"{YAHOO_FINANCE_BASE_URL}/{symbol}"
+        params = {"range": "5d", "interval": "1d"}
+        headers = {"User-Agent": "Mozilla/5.0"}
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(url, params=params, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+
+        result = data.get("chart", {}).get("result", [])
+        if not result:
+            return _get_estimated_price(commodity)
+
+        meta = result[0].get("meta", {})
+        current_price = meta.get("regularMarketPrice")
+        if current_price is None:
+            return _get_estimated_price(commodity)
+
+        # Yahoo Finance uses chartPreviousClose or previousClose
+        prev_close = meta.get("previousClose") or meta.get("chartPreviousClose")
+
+        if prev_close and prev_close > 0:
+            change_pct = ((current_price - prev_close) / prev_close) * 100
+            direction = (
+                "up" if change_pct > 0 else "down" if change_pct < 0 else "flat"
+            )
+        else:
+            change_pct = 0.0
+            direction = "flat"
+
+        return PriceTrend(
+            current_price=round(current_price, 2),
+            change_percent=round(change_pct, 2),
+            direction=direction,
+            source="yahoo_finance",
+        )
+
+    except Exception:
+        return _get_estimated_price(commodity)
+
+
+async def fetch_price_trend(commodity: str) -> PriceTrend:
+    """Fetch current price trend for a commodity using the appropriate API."""
+    config = COMMODITY_CONFIG.get(commodity)
+    if not config:
+        return PriceTrend()
+
+    if config["source"] == "alpha_vantage":
+        return await _fetch_alpha_vantage_price(commodity, config)
+    return await _fetch_yahoo_price(commodity, config)
+
+
+def _get_estimated_price(commodity: str) -> PriceTrend:
+    """Return estimated commodity prices as fallback when APIs fail."""
+    estimates = {
+        "Coffee": PriceTrend(
+            current_price=185.50,
+            change_percent=1.2,
+            direction="up",
+            source="estimated",
+        ),
+        "Sugar": PriceTrend(
+            current_price=22.45,
+            change_percent=-0.8,
+            direction="down",
+            source="estimated",
+        ),
+        "Cocoa": PriceTrend(
+            current_price=4250.00,
+            change_percent=0.5,
+            direction="up",
+            source="estimated",
+        ),
+    }
+    return estimates.get(commodity, PriceTrend())
+
+
+async def fetch_all_prices() -> dict[str, PriceTrend]:
+    """Fetch price trends for all tracked commodities in parallel."""
+    commodities = list(COMMODITY_CONFIG.keys())
+    results = await asyncio.gather(
+        *[fetch_price_trend(c) for c in commodities]
+    )
+    return dict(zip(commodities, results))
