@@ -7,12 +7,14 @@ from fastapi import APIRouter, HTTPException
 from app.models import (
     CommoditySignal,
     DashboardResponse,
+    PriceHistory,
     PriceTrend,
     RegionWeather,
 )
 from app.weather import get_all_weather
 from app.signals import generate_commodity_signal, generate_condition_summary, analyze_region
-from app.prices import fetch_all_prices
+from app.prices import fetch_all_prices, fetch_all_price_histories
+from app.producers import fetch_all_producers
 
 router = APIRouter()
 
@@ -26,9 +28,12 @@ async def health_check():
 async def get_signals():
     """Get weather-based trading signals for all tracked soft commodities."""
     try:
-        # Fetch weather and price data concurrently
-        weather_data, price_data = await asyncio.gather(
-            get_all_weather(), fetch_all_prices()
+        # Fetch weather, prices, price history, and producer data concurrently
+        weather_data, price_data, history_data, producer_data = await asyncio.gather(
+            get_all_weather(),
+            fetch_all_prices(),
+            fetch_all_price_histories(),
+            fetch_all_producers(),
         )
 
         signals = []
@@ -64,7 +69,9 @@ async def get_signals():
                 key_driver=key_driver,
                 rationale=rationale,
                 price_trend=price_data.get(commodity, PriceTrend()),
+                price_history=history_data.get(commodity, PriceHistory()),
                 regions=region_models,
+                producers=producer_data.get(commodity, []),
                 last_updated=datetime.now(timezone.utc).isoformat(),
             )
             signals.append(commodity_signal)

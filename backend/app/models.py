@@ -14,6 +14,12 @@ class Confidence(str, Enum):
     LOW = "Low"
 
 
+class WeatherRisk(str, Enum):
+    NORMAL = "Normal"
+    WATCH = "Watch"
+    ALERT = "Alert"
+
+
 class RegionWeather(BaseModel):
     region_name: str
     country: str
@@ -33,6 +39,27 @@ class PriceTrend(BaseModel):
     source: str = "estimated"
 
 
+class PriceHistoryPoint(BaseModel):
+    date: str
+    close: float
+
+
+class PriceHistory(BaseModel):
+    points: list[PriceHistoryPoint] = []
+    trend_label: str = "N/A"
+    source: str = "yahoo_finance"
+
+
+class ProducerCountry(BaseModel):
+    country: str
+    share_percent: float
+    weather_risk: WeatherRisk
+    risk_detail: str
+    temperature_avg: float
+    precipitation_sum: float
+    relative_humidity: float
+
+
 class CommoditySignal(BaseModel):
     commodity: str
     signal: Signal
@@ -40,7 +67,9 @@ class CommoditySignal(BaseModel):
     key_driver: str
     rationale: str
     price_trend: PriceTrend
+    price_history: PriceHistory
     regions: list[RegionWeather]
+    producers: list[ProducerCountry]
     last_updated: str
 
 

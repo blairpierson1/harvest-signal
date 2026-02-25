@@ -5,7 +5,9 @@ import type { CommoditySignal } from "../types";
 import SignalBadge from "./SignalBadge";
 import ConfidenceMeter from "./ConfidenceMeter";
 import PriceTicker from "./PriceTicker";
+import SparklineChart from "./SparklineChart";
 import RegionDetail from "./RegionDetail";
+import ProducerCountries from "./ProducerCountries";
 
 interface CommodityCardProps {
   data: CommoditySignal;
@@ -69,6 +71,11 @@ export default function CommodityCard({ data }: CommodityCardProps) {
           <ConfidenceMeter confidence={data.confidence} />
         </div>
 
+        {/* 30-Day Price Sparkline */}
+        {data.price_history && (
+          <SparklineChart history={data.price_history} />
+        )}
+
         {/* Rationale */}
         <div className="mb-2">
           <span className="text-xs text-text-muted uppercase tracking-widest block mb-1">
@@ -94,6 +101,11 @@ export default function CommodityCard({ data }: CommodityCardProps) {
 
         {/* Region Details (expandable) */}
         {expanded && <RegionDetail regions={data.regions} />}
+
+        {/* Top Producing Countries (expandable) */}
+        {data.producers && data.producers.length > 0 && (
+          <ProducerCountries producers={data.producers} />
+        )}
       </div>
     </div>
   );

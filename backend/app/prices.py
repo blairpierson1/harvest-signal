@@ -2,14 +2,16 @@
 
 Coffee uses Alpha Vantage (dedicated commodity endpoint).
 Sugar and Cocoa use Yahoo Finance (Alpha Vantage lacks proper support for these).
+All 30-day price history uses Yahoo Finance (all three have futures symbols).
 """
 
 import asyncio
 import os
+from datetime import datetime
 
 import httpx
 
-from app.models import PriceTrend
+from app.models import PriceHistory, PriceHistoryPoint, PriceTrend
 
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 YAHOO_FINANCE_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
@@ -19,6 +21,13 @@ COMMODITY_CONFIG: dict[str, dict[str, str]] = {
     "Coffee": {"source": "alpha_vantage", "function": "COFFEE"},
     "Sugar": {"source": "yahoo", "symbol": "SB=F"},
     "Cocoa": {"source": "yahoo", "symbol": "CC=F"},
+}
+
+# Yahoo Finance symbols for 30-day price history (all commodities).
+YAHOO_SYMBOLS: dict[str, str] = {
+    "Coffee": "KC=F",
+    "Sugar": "SB=F",
+    "Cocoa": "CC=F",
 }
 
 
@@ -173,5 +182,77 @@ async def fetch_all_prices() -> dict[str, PriceTrend]:
     commodities = list(COMMODITY_CONFIG.keys())
     results = await asyncio.gather(
         *[fetch_price_trend(c) for c in commodities]
+    )
+    return dict(zip(commodities, results))
+
+
+def _compute_trend_label(points: list[PriceHistoryPoint]) -> str:
+    """Determine Uptrend / Downtrend / Sideways from 30-day price history."""
+    if len(points) < 5:
+        return "N/A"
+
+    first_5_avg = sum(p.close for p in points[:5]) / 5
+    last_5_avg = sum(p.close for p in points[-5:]) / 5
+
+    if first_5_avg == 0:
+        return "Sideways"
+
+    pct_change = ((last_5_avg - first_5_avg) / first_5_avg) * 100
+
+    if pct_change > 3.0:
+        return "Uptrend"
+    elif pct_change < -3.0:
+        return "Downtrend"
+    return "Sideways"
+
+
+async def fetch_price_history(commodity: str) -> PriceHistory:
+    """Fetch 30-day price history from Yahoo Finance for sparkline chart."""
+    symbol = YAHOO_SYMBOLS.get(commodity)
+    if not symbol:
+        return PriceHistory()
+
+    try:
+        url = f"{YAHOO_FINANCE_BASE_URL}/{symbol}"
+        params = {"range": "1mo", "interval": "1d"}
+        headers = {"User-Agent": "Mozilla/5.0"}
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(url, params=params, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+
+        result = data.get("chart", {}).get("result", [])
+        if not result:
+            return PriceHistory()
+
+        timestamps = result[0].get("timestamp", [])
+        closes_raw = (
+            result[0].get("indicators", {}).get("quote", [{}])[0].get("close", [])
+        )
+
+        points: list[PriceHistoryPoint] = []
+        for ts, close in zip(timestamps, closes_raw):
+            if close is not None:
+                date_str = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+                points.append(PriceHistoryPoint(date=date_str, close=round(close, 2)))
+
+        trend_label = _compute_trend_label(points)
+
+        return PriceHistory(
+            points=points,
+            trend_label=trend_label,
+            source="yahoo_finance",
+        )
+
+    except Exception:
+        return PriceHistory()
+
+
+async def fetch_all_price_histories() -> dict[str, PriceHistory]:
+    """Fetch 30-day price history for all commodities in parallel."""
+    commodities = list(YAHOO_SYMBOLS.keys())
+    results = await asyncio.gather(
+        *[fetch_price_history(c) for c in commodities]
     )
     return dict(zip(commodities, results))

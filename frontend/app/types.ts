@@ -1,5 +1,6 @@
 export type Signal = "Bullish" | "Bearish" | "Neutral";
 export type Confidence = "High" | "Medium" | "Low";
+export type WeatherRisk = "Normal" | "Watch" | "Alert";
 
 export interface RegionWeather {
   region_name: string;
@@ -20,6 +21,27 @@ export interface PriceTrend {
   source: string;
 }
 
+export interface PriceHistoryPoint {
+  date: string;
+  close: number;
+}
+
+export interface PriceHistory {
+  points: PriceHistoryPoint[];
+  trend_label: string;
+  source: string;
+}
+
+export interface ProducerCountry {
+  country: string;
+  share_percent: number;
+  weather_risk: WeatherRisk;
+  risk_detail: string;
+  temperature_avg: number;
+  precipitation_sum: number;
+  relative_humidity: number;
+}
+
 export interface CommoditySignal {
   commodity: string;
   signal: Signal;
@@ -27,7 +49,9 @@ export interface CommoditySignal {
   key_driver: string;
   rationale: string;
   price_trend: PriceTrend;
+  price_history: PriceHistory;
   regions: RegionWeather[];
+  producers: ProducerCountry[];
   last_updated: string;
 }
 
