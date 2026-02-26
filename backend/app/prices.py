@@ -17,8 +17,9 @@ ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 YAHOO_FINANCE_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 
 # Routing table: which API to use for each commodity.
+# Coffee tries Alpha Vantage first, then falls back to Yahoo Finance.
 COMMODITY_CONFIG: dict[str, dict[str, str]] = {
-    "Coffee": {"source": "alpha_vantage", "function": "COFFEE"},
+    "Coffee": {"source": "alpha_vantage", "function": "COFFEE", "yahoo_fallback": "KC=F"},
     "Sugar": {"source": "yahoo", "symbol": "SB=F"},
     "Cocoa": {"source": "yahoo", "symbol": "CC=F"},
 }
@@ -142,13 +143,25 @@ async def _fetch_yahoo_price(
 
 
 async def fetch_price_trend(commodity: str) -> PriceTrend:
-    """Fetch current price trend for a commodity using the appropriate API."""
+    """Fetch current price trend for a commodity using the appropriate API.
+
+    For Coffee: tries Alpha Vantage first, falls back to Yahoo Finance if
+    the API key is missing or rate-limited (free tier is 25 req/day).
+    """
     config = COMMODITY_CONFIG.get(commodity)
     if not config:
         return PriceTrend()
 
     if config["source"] == "alpha_vantage":
-        return await _fetch_alpha_vantage_price(commodity, config)
+        result = await _fetch_alpha_vantage_price(commodity, config)
+        # If Alpha Vantage returned an estimate (key missing / rate-limited),
+        # try Yahoo Finance as a secondary source before giving up.
+        if result.source == "estimated" and "yahoo_fallback" in config:
+            yahoo_config = {"symbol": config["yahoo_fallback"]}
+            yahoo_result = await _fetch_yahoo_price(commodity, yahoo_config)
+            if yahoo_result.source != "estimated":
+                return yahoo_result
+        return result
     return await _fetch_yahoo_price(commodity, config)
 
 
@@ -156,21 +169,21 @@ def _get_estimated_price(commodity: str) -> PriceTrend:
     """Return estimated commodity prices as fallback when APIs fail."""
     estimates = {
         "Coffee": PriceTrend(
-            current_price=185.50,
-            change_percent=1.2,
-            direction="up",
+            current_price=365.00,
+            change_percent=0.0,
+            direction="flat",
             source="estimated",
         ),
         "Sugar": PriceTrend(
-            current_price=22.45,
-            change_percent=-0.8,
-            direction="down",
+            current_price=14.00,
+            change_percent=0.0,
+            direction="flat",
             source="estimated",
         ),
         "Cocoa": PriceTrend(
-            current_price=4250.00,
-            change_percent=0.5,
-            direction="up",
+            current_price=3050.00,
+            change_percent=0.0,
+            direction="flat",
             source="estimated",
         ),
     }

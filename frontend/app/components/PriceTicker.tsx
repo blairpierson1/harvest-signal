@@ -63,7 +63,9 @@ export default function PriceTicker({ trend, commodity }: PriceTickerProps) {
         </div>
       )}
       {trend.source === "estimated" && (
-        <span className="text-xs text-text-muted italic">est.</span>
+        <span className="text-[10px] text-text-muted italic ml-1 self-end mb-0.5">
+          (est.)
+        </span>
       )}
     </div>
   );
