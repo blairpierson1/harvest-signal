@@ -1,8 +1,9 @@
 """Price trend data for soft commodities.
 
-Coffee uses Alpha Vantage (dedicated commodity endpoint).
-Sugar and Cocoa use Yahoo Finance (Alpha Vantage lacks proper support for these).
-All 30-day price history uses Yahoo Finance (all three have futures symbols).
+All three commodities use Yahoo Finance as the primary price source.
+Alpha Vantage is kept as a last-resort fallback for Coffee only
+(when Yahoo Finance fails).
+30-day price history also uses Yahoo Finance for all three.
 """
 
 import asyncio
@@ -16,10 +17,10 @@ from app.models import PriceHistory, PriceHistoryPoint, PriceTrend
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 YAHOO_FINANCE_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 
-# Routing table: which API to use for each commodity.
-# Coffee tries Alpha Vantage first, then falls back to Yahoo Finance.
+# Routing table: Yahoo Finance is primary for all commodities.
+# Alpha Vantage is a last-resort fallback for Coffee only.
 COMMODITY_CONFIG: dict[str, dict[str, str]] = {
-    "Coffee": {"source": "alpha_vantage", "function": "COFFEE", "yahoo_fallback": "KC=F"},
+    "Coffee": {"source": "yahoo", "symbol": "KC=F", "av_fallback_function": "COFFEE"},
     "Sugar": {"source": "yahoo", "symbol": "SB=F"},
     "Cocoa": {"source": "yahoo", "symbol": "CC=F"},
 }
@@ -143,26 +144,25 @@ async def _fetch_yahoo_price(
 
 
 async def fetch_price_trend(commodity: str) -> PriceTrend:
-    """Fetch current price trend for a commodity using the appropriate API.
+    """Fetch current price trend for a commodity.
 
-    For Coffee: tries Alpha Vantage first, falls back to Yahoo Finance if
-    the API key is missing or rate-limited (free tier is 25 req/day).
+    All commodities use Yahoo Finance as primary.
+    Coffee falls back to Alpha Vantage if Yahoo Finance fails.
     """
     config = COMMODITY_CONFIG.get(commodity)
     if not config:
         return PriceTrend()
 
-    if config["source"] == "alpha_vantage":
-        result = await _fetch_alpha_vantage_price(commodity, config)
-        # If Alpha Vantage returned an estimate (key missing / rate-limited),
-        # try Yahoo Finance as a secondary source before giving up.
-        if result.source == "estimated" and "yahoo_fallback" in config:
-            yahoo_config = {"symbol": config["yahoo_fallback"]}
-            yahoo_result = await _fetch_yahoo_price(commodity, yahoo_config)
-            if yahoo_result.source != "estimated":
-                return yahoo_result
-        return result
-    return await _fetch_yahoo_price(commodity, config)
+    result = await _fetch_yahoo_price(commodity, config)
+
+    # If Yahoo Finance failed and there's an Alpha Vantage fallback, try it.
+    if result.source == "estimated" and "av_fallback_function" in config:
+        av_config = {"function": config["av_fallback_function"]}
+        av_result = await _fetch_alpha_vantage_price(commodity, av_config)
+        if av_result.source != "estimated":
+            return av_result
+
+    return result
 
 
 def _get_estimated_price(commodity: str) -> PriceTrend:
