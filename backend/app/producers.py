@@ -1,11 +1,14 @@
 """Top producing countries with weather risk assessment for each commodity."""
 
 import asyncio
-
-import httpx
+import logging
 from datetime import datetime, timedelta
 
+import httpx
+
 from app.models import ProducerCountry, WeatherRisk
+
+logger = logging.getLogger(__name__)
 
 # Top 5 producing countries with primary growing region coordinates and global share.
 PRODUCER_CONFIG: dict[str, list[dict]] = {
@@ -124,6 +127,7 @@ async def _fetch_single_producer(commodity: str, config: dict) -> ProducerCountr
     try:
         weather = await _fetch_producer_weather(config["latitude"], config["longitude"])
     except Exception:
+        logger.exception("Failed to fetch producer data, using fallback")
         weather = {
             "temperature_avg": 25.0,
             "temperature_max": 32.0,

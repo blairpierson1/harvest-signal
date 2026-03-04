@@ -7,12 +7,15 @@ Alpha Vantage is kept as a last-resort fallback for Coffee only
 """
 
 import asyncio
+import logging
 import os
 from datetime import datetime
 
 import httpx
 
 from app.models import PriceHistory, PriceHistoryPoint, PriceTrend
+
+logger = logging.getLogger(__name__)
 
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 YAHOO_FINANCE_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
@@ -93,6 +96,7 @@ async def _fetch_alpha_vantage_price(
         )
 
     except Exception:
+        logger.exception("Failed to fetch price from Alpha Vantage, using estimate")
         return _get_estimated_price(commodity)
 
 
@@ -140,6 +144,7 @@ async def _fetch_yahoo_price(
         )
 
     except Exception:
+        logger.exception("Failed to fetch price from Yahoo Finance, using estimate")
         return _get_estimated_price(commodity)
 
 
@@ -259,6 +264,7 @@ async def fetch_price_history(commodity: str) -> PriceHistory:
         )
 
     except Exception:
+        logger.exception("Failed to fetch price history, using fallback")
         return PriceHistory()
 
 

@@ -1,9 +1,12 @@
 """API routes for Harvest Signal dashboard."""
 
 import asyncio
+import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
 
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from app.dependencies import limiter, verify_api_key
 from app.models import (
     CommoditySignal,
     DashboardResponse,
@@ -16,6 +19,8 @@ from app.signals import generate_commodity_signal, generate_condition_summary, a
 from app.prices import fetch_all_prices, fetch_all_price_histories
 from app.producers import fetch_all_producers
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
@@ -25,7 +30,8 @@ async def health_check():
 
 
 @router.get("/api/signals", response_model=DashboardResponse)
-async def get_signals():
+@limiter.limit("10/minute")
+async def get_signals(request: Request, _auth: None = Depends(verify_api_key)):
     """Get weather-based trading signals for all tracked soft commodities."""
     try:
         # Fetch weather, prices, price history, and producer data concurrently
@@ -83,7 +89,8 @@ async def get_signals():
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate signals: {str(e)}")
+        logger.exception("Failed to generate signals")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again later.")
 
 
 @router.get("/api/health")
