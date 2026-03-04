@@ -92,6 +92,58 @@ COMMODITY_REGIONS = {
             "longitude": -0.38,
         },
     ],
+    "Lumber": [
+        {
+            "region_name": "Pacific Northwest",
+            "country": "USA",
+            "latitude": 47.61,
+            "longitude": -122.33,
+        },
+        {
+            "region_name": "British Columbia",
+            "country": "Canada",
+            "latitude": 53.73,
+            "longitude": -127.65,
+        },
+        {
+            "region_name": "Southeast USA",
+            "country": "USA",
+            "latitude": 33.75,
+            "longitude": -84.39,
+        },
+        {
+            "region_name": "Scandinavia",
+            "country": "Sweden",
+            "latitude": 59.33,
+            "longitude": 18.07,
+        },
+    ],
+    "Palm Oil": [
+        {
+            "region_name": "Sumatra",
+            "country": "Indonesia",
+            "latitude": 0.59,
+            "longitude": 101.43,
+        },
+        {
+            "region_name": "Borneo",
+            "country": "Malaysia",
+            "latitude": 1.55,
+            "longitude": 110.35,
+        },
+        {
+            "region_name": "Sabah",
+            "country": "Malaysia",
+            "latitude": 5.98,
+            "longitude": 116.07,
+        },
+        {
+            "region_name": "Riau",
+            "country": "Indonesia",
+            "latitude": 0.51,
+            "longitude": 101.45,
+        },
+    ],
 }
 
 # Typical monthly averages for reference (simplified baselines)
@@ -100,6 +152,8 @@ BASELINE_TEMP = {
     "Sugar": {"Brazil": 24.0, "India": 28.0},
     "Cocoa": {"Ghana": 27.0, "Ivory Coast": 27.0},
     "Orange Juice": {"USA": 24.0, "Brazil": 24.0, "Mexico": 25.0, "Spain": 18.0},
+    "Lumber": {"USA": 15.0, "Canada": 10.0, "Sweden": 8.0},
+    "Palm Oil": {"Indonesia": 27.0, "Malaysia": 27.0},
 }
 
 BASELINE_PRECIP = {
@@ -107,6 +161,8 @@ BASELINE_PRECIP = {
     "Sugar": {"Brazil": 4.5, "India": 3.0},
     "Cocoa": {"Ghana": 5.5, "Ivory Coast": 6.0},
     "Orange Juice": {"USA": 4.0, "Brazil": 4.5, "Mexico": 3.5, "Spain": 2.0},
+    "Lumber": {"USA": 3.0, "Canada": 2.5, "Sweden": 2.0},
+    "Palm Oil": {"Indonesia": 7.0, "Malaysia": 7.0},
 }
 
 

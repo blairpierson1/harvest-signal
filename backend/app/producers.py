@@ -37,6 +37,20 @@ PRODUCER_CONFIG: dict[str, list[dict]] = {
         {"country": "Spain", "share_percent": 6.0, "latitude": 39.47, "longitude": -0.38},
         {"country": "Italy", "share_percent": 4.0, "latitude": 37.50, "longitude": 15.09},
     ],
+    "Lumber": [
+        {"country": "USA", "share_percent": 18.0, "latitude": 47.61, "longitude": -122.33},
+        {"country": "Canada", "share_percent": 14.0, "latitude": 53.73, "longitude": -127.65},
+        {"country": "Russia", "share_percent": 12.0, "latitude": 56.32, "longitude": 44.00},
+        {"country": "Sweden", "share_percent": 6.0, "latitude": 59.33, "longitude": 18.07},
+        {"country": "Finland", "share_percent": 5.0, "latitude": 60.17, "longitude": 24.94},
+    ],
+    "Palm Oil": [
+        {"country": "Indonesia", "share_percent": 58.0, "latitude": 0.59, "longitude": 101.43},
+        {"country": "Malaysia", "share_percent": 26.0, "latitude": 1.55, "longitude": 110.35},
+        {"country": "Thailand", "share_percent": 4.0, "latitude": 8.65, "longitude": 99.12},
+        {"country": "Colombia", "share_percent": 2.5, "latitude": 7.12, "longitude": -73.12},
+        {"country": "Nigeria", "share_percent": 2.0, "latitude": 6.52, "longitude": 3.38},
+    ],
 }
 
 # Commodity-specific thresholds for weather risk classification.
@@ -45,6 +59,8 @@ RISK_THRESHOLDS: dict[str, dict] = {
     "Sugar": {"temp_watch": 32.0, "temp_alert": 36.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 12.0, "precip_high_alert": 16.0, "humidity_low": 45.0},
     "Cocoa": {"temp_watch": 30.0, "temp_alert": 34.0, "precip_low_watch": 2.5, "precip_low_alert": 1.5, "precip_high_watch": 12.0, "precip_high_alert": 15.0, "humidity_low": 55.0},
     "Orange Juice": {"temp_watch": 30.0, "temp_alert": 34.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 11.0, "precip_high_alert": 14.0, "humidity_low": 45.0},
+    "Lumber": {"temp_watch": 30.0, "temp_alert": 35.0, "precip_low_watch": 1.5, "precip_low_alert": 0.5, "precip_high_watch": 12.0, "precip_high_alert": 16.0, "humidity_low": 30.0},
+    "Palm Oil": {"temp_watch": 32.0, "temp_alert": 36.0, "precip_low_watch": 3.0, "precip_low_alert": 1.5, "precip_high_watch": 14.0, "precip_high_alert": 18.0, "humidity_low": 60.0},
 }
 
 

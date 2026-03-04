@@ -20,6 +20,8 @@ const commodityIcons: Record<string, string> = {
   Sugar: "\uD83C\uDF6C",
   Cocoa: "\uD83C\uDF6B",
   "Orange Juice": "\uD83C\uDF4A",
+  Lumber: "\uD83C\uDF32",
+  "Palm Oil": "\uD83C\uDF34",
 };
 
 const signalBorderColor: Record<string, string> = {

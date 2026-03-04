@@ -24,6 +24,8 @@ COMMODITY_CONFIG: dict[str, dict[str, str]] = {
     "Sugar": {"source": "yahoo", "symbol": "SB=F"},
     "Cocoa": {"source": "yahoo", "symbol": "CC=F"},
     "Orange Juice": {"source": "yahoo", "symbol": "OJ=F"},
+    "Lumber": {"source": "yahoo", "symbol": "LBS=F"},
+    "Palm Oil": {"source": "yahoo", "symbol": "FCPO=F"},
 }
 
 # Yahoo Finance symbols for 30-day price history (all commodities).
@@ -32,6 +34,8 @@ YAHOO_SYMBOLS: dict[str, str] = {
     "Sugar": "SB=F",
     "Cocoa": "CC=F",
     "Orange Juice": "OJ=F",
+    "Lumber": "LBS=F",
+    "Palm Oil": "FCPO=F",
 }
 
 
@@ -190,6 +194,18 @@ def _get_estimated_price(commodity: str) -> PriceTrend:
         ),
         "Orange Juice": PriceTrend(
             current_price=280.00,
+            change_percent=0.0,
+            direction="flat",
+            source="estimated",
+        ),
+        "Lumber": PriceTrend(
+            current_price=550.00,
+            change_percent=0.0,
+            direction="flat",
+            source="estimated",
+        ),
+        "Palm Oil": PriceTrend(
+            current_price=925.00,
             change_percent=0.0,
             direction="flat",
             source="estimated",

@@ -18,6 +18,8 @@ NEWS_QUERIES: dict[str, str] = {
     "Sugar": "sugar commodity",
     "Cocoa": "cocoa commodity",
     "Orange Juice": "orange juice commodity",
+    "Lumber": "lumber timber commodity",
+    "Palm Oil": "palm oil commodity",
 }
 
 # In-memory cache: {commodity: (timestamp, [NewsArticle, ...])}

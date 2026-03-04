@@ -11,6 +11,8 @@ DROUGHT_THRESHOLDS = {
     "Sugar": {"precip_low": 1.5, "temp_high": 35.0, "humidity_low": 45.0},
     "Cocoa": {"precip_low": 2.0, "temp_high": 33.0, "humidity_low": 55.0},
     "Orange Juice": {"precip_low": 1.5, "temp_high": 32.0, "humidity_low": 45.0},
+    "Lumber": {"precip_low": 1.0, "temp_high": 35.0, "humidity_low": 30.0},
+    "Palm Oil": {"precip_low": 3.0, "temp_high": 35.0, "humidity_low": 60.0},
 }
 
 FLOOD_THRESHOLDS = {
@@ -18,6 +20,8 @@ FLOOD_THRESHOLDS = {
     "Sugar": {"precip_high": 15.0, "humidity_high": 90.0},
     "Cocoa": {"precip_high": 14.0, "humidity_high": 90.0},
     "Orange Juice": {"precip_high": 13.0, "humidity_high": 90.0},
+    "Lumber": {"precip_high": 15.0, "humidity_high": 92.0},
+    "Palm Oil": {"precip_high": 18.0, "humidity_high": 95.0},
 }
 
 HEAT_STRESS_THRESHOLDS = {
@@ -25,6 +29,8 @@ HEAT_STRESS_THRESHOLDS = {
     "Sugar": 38.0,
     "Cocoa": 35.0,
     "Orange Juice": 35.0,
+    "Lumber": 38.0,
+    "Palm Oil": 36.0,
 }
 
 
