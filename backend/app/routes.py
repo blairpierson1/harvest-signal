@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException
 from app.models import (
     CommoditySignal,
     DashboardResponse,
+    ForecastDirection,
     PriceHistory,
     PriceTrend,
     RegionWeather,
@@ -15,6 +16,8 @@ from app.weather import get_all_weather
 from app.signals import generate_commodity_signal, generate_condition_summary, analyze_region
 from app.prices import fetch_all_prices, fetch_all_price_histories
 from app.producers import fetch_all_producers
+from app.forecast import compute_forecast_direction
+from app.news import fetch_all_news
 
 router = APIRouter()
 
@@ -28,12 +31,13 @@ async def health_check():
 async def get_signals():
     """Get weather-based trading signals for all tracked soft commodities."""
     try:
-        # Fetch weather, prices, price history, and producer data concurrently
-        weather_data, price_data, history_data, producer_data = await asyncio.gather(
+        # Fetch weather, prices, price history, producer data, and news concurrently
+        weather_data, price_data, history_data, producer_data, news_data = await asyncio.gather(
             get_all_weather(),
             fetch_all_prices(),
             fetch_all_price_histories(),
             fetch_all_producers(),
+            fetch_all_news(),
         )
 
         signals = []
@@ -63,6 +67,12 @@ async def get_signals():
                     )
                 )
 
+            # Compute forecast direction from signal + price trend
+            commodity_history = history_data.get(commodity, PriceHistory())
+            forecast = compute_forecast_direction(
+                signal, commodity_history.trend_label, confidence
+            )
+
             commodity_signal = CommoditySignal(
                 commodity=commodity,
                 signal=signal,
@@ -70,9 +80,11 @@ async def get_signals():
                 key_driver=key_driver,
                 rationale=rationale,
                 price_trend=price_data.get(commodity, PriceTrend()),
-                price_history=history_data.get(commodity, PriceHistory()),
+                price_history=commodity_history,
+                forecast_direction=forecast,
                 regions=region_models,
                 producers=producer_data.get(commodity, []),
+                news=news_data.get(commodity, []),
                 last_updated=datetime.now(timezone.utc).isoformat(),
             )
             signals.append(commodity_signal)
@@ -91,5 +103,5 @@ async def api_health():
     return {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "commodities": ["Coffee", "Sugar", "Cocoa"],
+        "commodities": ["Coffee", "Sugar", "Cocoa", "Orange Juice"],
     }

@@ -60,6 +60,18 @@ class ProducerCountry(BaseModel):
     relative_humidity: float
 
 
+class ForecastDirection(BaseModel):
+    label: str
+    confidence: Confidence
+
+
+class NewsArticle(BaseModel):
+    title: str
+    source: str
+    url: str
+    published_at: str | None = None
+
+
 class CommoditySignal(BaseModel):
     commodity: str
     signal: Signal
@@ -68,8 +80,10 @@ class CommoditySignal(BaseModel):
     rationale: str
     price_trend: PriceTrend
     price_history: PriceHistory
+    forecast_direction: ForecastDirection
     regions: list[RegionWeather]
     producers: list[ProducerCountry]
+    news: list[NewsArticle]
     last_updated: str
 
 

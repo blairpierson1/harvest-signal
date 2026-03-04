@@ -42,6 +42,18 @@ export interface ProducerCountry {
   relative_humidity: number;
 }
 
+export interface ForecastDirection {
+  label: string;
+  confidence: Confidence;
+}
+
+export interface NewsArticle {
+  title: string;
+  source: string;
+  url: string;
+  published_at: string | null;
+}
+
 export interface CommoditySignal {
   commodity: string;
   signal: Signal;
@@ -50,8 +62,10 @@ export interface CommoditySignal {
   rationale: string;
   price_trend: PriceTrend;
   price_history: PriceHistory;
+  forecast_direction: ForecastDirection;
   regions: RegionWeather[];
   producers: ProducerCountry[];
+  news: NewsArticle[];
   last_updated: string;
 }
 

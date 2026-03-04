@@ -11,6 +11,7 @@ const commodityUnits: Record<string, string> = {
   Coffee: "¢/lb",
   Sugar: "¢/lb",
   Cocoa: "$/ton",
+  "Orange Juice": "¢/lb",
 };
 
 export default function PriceTicker({ trend, commodity }: PriceTickerProps) {

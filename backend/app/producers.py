@@ -30,6 +30,13 @@ PRODUCER_CONFIG: dict[str, list[dict]] = {
         {"country": "Nigeria", "share_percent": 4.8, "latitude": 7.50, "longitude": 3.90},
         {"country": "Ecuador", "share_percent": 4.5, "latitude": -1.80, "longitude": -79.50},
     ],
+    "Orange Juice": [
+        {"country": "Brazil", "share_percent": 34.0, "latitude": -22.19, "longitude": -48.79},
+        {"country": "USA", "share_percent": 26.0, "latitude": 28.03, "longitude": -81.95},
+        {"country": "Mexico", "share_percent": 8.0, "latitude": 19.17, "longitude": -96.13},
+        {"country": "Spain", "share_percent": 6.0, "latitude": 39.47, "longitude": -0.38},
+        {"country": "Italy", "share_percent": 4.0, "latitude": 37.50, "longitude": 15.09},
+    ],
 }
 
 # Commodity-specific thresholds for weather risk classification.
@@ -37,6 +44,7 @@ RISK_THRESHOLDS: dict[str, dict] = {
     "Coffee": {"temp_watch": 28.0, "temp_alert": 32.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 10.0, "precip_high_alert": 14.0, "humidity_low": 50.0},
     "Sugar": {"temp_watch": 32.0, "temp_alert": 36.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 12.0, "precip_high_alert": 16.0, "humidity_low": 45.0},
     "Cocoa": {"temp_watch": 30.0, "temp_alert": 34.0, "precip_low_watch": 2.5, "precip_low_alert": 1.5, "precip_high_watch": 12.0, "precip_high_alert": 15.0, "humidity_low": 55.0},
+    "Orange Juice": {"temp_watch": 30.0, "temp_alert": 34.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 11.0, "precip_high_alert": 14.0, "humidity_low": 45.0},
 }
 
 

@@ -6,8 +6,10 @@ import SignalBadge from "./SignalBadge";
 import ConfidenceMeter from "./ConfidenceMeter";
 import PriceTicker from "./PriceTicker";
 import SparklineChart from "./SparklineChart";
+import ForecastLabel from "./ForecastLabel";
 import RegionDetail from "./RegionDetail";
 import ProducerCountries from "./ProducerCountries";
+import CommodityNews from "./CommodityNews";
 
 interface CommodityCardProps {
   data: CommoditySignal;
@@ -17,6 +19,7 @@ const commodityIcons: Record<string, string> = {
   Coffee: "\u2615",
   Sugar: "\uD83C\uDF6C",
   Cocoa: "\uD83C\uDF6B",
+  "Orange Juice": "\uD83C\uDF4A",
 };
 
 const signalBorderColor: Record<string, string> = {
@@ -71,6 +74,11 @@ export default function CommodityCard({ data }: CommodityCardProps) {
           <ConfidenceMeter confidence={data.confidence} />
         </div>
 
+        {/* Price Forecast Direction */}
+        {data.forecast_direction && (
+          <ForecastLabel forecast={data.forecast_direction} />
+        )}
+
         {/* 30-Day Price Sparkline */}
         {data.price_history && (
           <SparklineChart history={data.price_history} />
@@ -105,6 +113,11 @@ export default function CommodityCard({ data }: CommodityCardProps) {
         {/* Top Producing Countries (expandable) */}
         {data.producers && data.producers.length > 0 && (
           <ProducerCountries producers={data.producers} />
+        )}
+
+        {/* Latest News (expandable) */}
+        {data.news && data.news.length > 0 && (
+          <CommodityNews articles={data.news} />
         )}
       </div>
     </div>

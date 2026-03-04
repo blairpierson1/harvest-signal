@@ -66,6 +66,32 @@ COMMODITY_REGIONS = {
             "longitude": -6.58,
         },
     ],
+    "Orange Juice": [
+        {
+            "region_name": "Central Florida",
+            "country": "USA",
+            "latitude": 28.03,
+            "longitude": -81.95,
+        },
+        {
+            "region_name": "São Paulo State",
+            "country": "Brazil",
+            "latitude": -22.19,
+            "longitude": -48.79,
+        },
+        {
+            "region_name": "Veracruz",
+            "country": "Mexico",
+            "latitude": 19.17,
+            "longitude": -96.13,
+        },
+        {
+            "region_name": "Valencia",
+            "country": "Spain",
+            "latitude": 39.47,
+            "longitude": -0.38,
+        },
+    ],
 }
 
 # Typical monthly averages for reference (simplified baselines)
@@ -73,12 +99,14 @@ BASELINE_TEMP = {
     "Coffee": {"Brazil": 23.0, "Vietnam": 24.0},
     "Sugar": {"Brazil": 24.0, "India": 28.0},
     "Cocoa": {"Ghana": 27.0, "Ivory Coast": 27.0},
+    "Orange Juice": {"USA": 24.0, "Brazil": 24.0, "Mexico": 25.0, "Spain": 18.0},
 }
 
 BASELINE_PRECIP = {
     "Coffee": {"Brazil": 5.0, "Vietnam": 6.0},
     "Sugar": {"Brazil": 4.5, "India": 3.0},
     "Cocoa": {"Ghana": 5.5, "Ivory Coast": 6.0},
+    "Orange Juice": {"USA": 4.0, "Brazil": 4.5, "Mexico": 3.5, "Spain": 2.0},
 }
 
 

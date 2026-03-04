@@ -1,9 +1,9 @@
 """Price trend data for soft commodities.
 
-All three commodities use Yahoo Finance as the primary price source.
+All commodities use Yahoo Finance as the primary price source.
 Alpha Vantage is kept as a last-resort fallback for Coffee only
 (when Yahoo Finance fails).
-30-day price history also uses Yahoo Finance for all three.
+30-day price history also uses Yahoo Finance for all commodities.
 """
 
 import asyncio
@@ -23,6 +23,7 @@ COMMODITY_CONFIG: dict[str, dict[str, str]] = {
     "Coffee": {"source": "yahoo", "symbol": "KC=F", "av_fallback_function": "COFFEE"},
     "Sugar": {"source": "yahoo", "symbol": "SB=F"},
     "Cocoa": {"source": "yahoo", "symbol": "CC=F"},
+    "Orange Juice": {"source": "yahoo", "symbol": "OJ=F"},
 }
 
 # Yahoo Finance symbols for 30-day price history (all commodities).
@@ -30,6 +31,7 @@ YAHOO_SYMBOLS: dict[str, str] = {
     "Coffee": "KC=F",
     "Sugar": "SB=F",
     "Cocoa": "CC=F",
+    "Orange Juice": "OJ=F",
 }
 
 
@@ -182,6 +184,12 @@ def _get_estimated_price(commodity: str) -> PriceTrend:
         ),
         "Cocoa": PriceTrend(
             current_price=3050.00,
+            change_percent=0.0,
+            direction="flat",
+            source="estimated",
+        ),
+        "Orange Juice": PriceTrend(
+            current_price=280.00,
             change_percent=0.0,
             direction="flat",
             source="estimated",
