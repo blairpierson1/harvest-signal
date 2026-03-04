@@ -19,7 +19,7 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",
 # ---------------------------------------------------------------------------
 # API-key authentication (optional – skipped when API_KEY is not set)
 # ---------------------------------------------------------------------------
-API_KEY = os.getenv("API_KEY")
+API_KEY = os.getenv("API_KEY") or None
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
