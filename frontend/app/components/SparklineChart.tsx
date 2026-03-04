@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import type { PriceHistory } from "../types";
 import {
   ResponsiveContainer,
@@ -28,6 +29,7 @@ const trendArrows: Record<string, string> = {
 };
 
 export default function SparklineChart({ history }: SparklineChartProps) {
+  const gradientId = useId();
   const { points, trend_label } = history;
   const colors = trendColors[trend_label] ?? trendColors["N/A"];
   const arrow = trendArrows[trend_label] ?? "\u2014";
@@ -61,7 +63,7 @@ export default function SparklineChart({ history }: SparklineChartProps) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
             <defs>
-              <linearGradient id={`gradient-${trend_label}`} x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={colors.stroke} stopOpacity={0.3} />
                 <stop offset="100%" stopColor={colors.stroke} stopOpacity={0.02} />
               </linearGradient>
@@ -86,7 +88,7 @@ export default function SparklineChart({ history }: SparklineChartProps) {
               dataKey="price"
               stroke={colors.stroke}
               strokeWidth={1.5}
-              fill={`url(#gradient-${trend_label})`}
+              fill={`url(#${gradientId})`}
               dot={false}
               activeDot={{ r: 3, fill: colors.stroke }}
             />

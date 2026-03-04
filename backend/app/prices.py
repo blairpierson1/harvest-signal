@@ -209,7 +209,7 @@ async def fetch_all_prices() -> dict[str, PriceTrend]:
 
 def _compute_trend_label(points: list[PriceHistoryPoint]) -> str:
     """Determine Uptrend / Downtrend / Sideways from 30-day price history."""
-    if len(points) < 5:
+    if len(points) < 10:
         return "N/A"
 
     first_5_avg = sum(p.close for p in points[:5]) / 5
