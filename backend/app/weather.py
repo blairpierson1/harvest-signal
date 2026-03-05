@@ -1,8 +1,12 @@
 """Weather data fetching from Open-Meteo API."""
 
 import asyncio
-import httpx
+import logging
 from datetime import datetime, timedelta
+
+import httpx
+
+logger = logging.getLogger(__name__)
 
 # Growing region coordinates
 COMMODITY_REGIONS = {
@@ -145,6 +149,7 @@ async def _fetch_single_region(region: dict) -> dict:
             **parsed,
         }
     except Exception:
+        logger.exception("Failed to fetch weather data, using fallback")
         # Use fallback data if API fails
         return {
             "region_name": region["region_name"],

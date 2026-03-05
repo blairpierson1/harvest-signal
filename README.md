@@ -80,10 +80,12 @@ cd backend
 # Install dependencies
 poetry install
 
-# (Optional) Create .env file for API keys
+# (Optional) Create .env file for API keys and configuration
 cat > .env << EOF
 NEWSAPI_KEY=your_newsapi_key_here
 ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key_here
+ALLOWED_ORIGINS=http://localhost:3000
+API_KEY=
 EOF
 
 # Start the development server
@@ -124,6 +126,8 @@ Produces a static export in `frontend/out/` deployable to any static hosting pro
 |----------|----------|-------------|
 | `NEWSAPI_KEY` | Optional | [NewsAPI.org](https://newsapi.org/) key for news headlines. Without it, the news section is empty. |
 | `ALPHA_VANTAGE_API_KEY` | Optional | [Alpha Vantage](https://www.alphavantage.co/) key, last-resort fallback for Coffee pricing only. |
+| `ALLOWED_ORIGINS` | Optional | Comma-separated list of allowed CORS origins. Defaults to `http://localhost:3000`. |
+| `API_KEY` | Optional | API key for authenticating requests to `/api/signals`. If not set, authentication is disabled (convenient for local dev). Clients pass the key via `X-API-Key` header or `Authorization: Bearer <key>`. |
 | `NEXT_PUBLIC_API_URL` | Required (frontend) | Backend API URL. Defaults to `http://localhost:8000`. |
 
 ## Project Structure
