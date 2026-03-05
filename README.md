@@ -82,7 +82,7 @@ poetry install
 
 # (Optional) Create .env file for API keys and configuration
 cat > .env << EOF
-NEWSAPI_KEY=your_newsapi_key_here
+# NEWSAPI_KEY=your_newsapi_key_here        # Not yet implemented
 ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key_here
 ALLOWED_ORIGINS=http://localhost:3000
 API_KEY=
@@ -92,7 +92,7 @@ EOF
 poetry run fastapi dev app/main.py
 ```
 
-The backend runs at `http://localhost:8000`. Weather data and Yahoo Finance prices work without any API keys. The news section requires a `NEWSAPI_KEY` from [newsapi.org](https://newsapi.org/) (free tier: 100 requests/day).
+The backend runs at `http://localhost:8000`. Weather data and Yahoo Finance prices work without any API keys. Alpha Vantage is an optional last-resort fallback for Coffee pricing only.
 
 ### Frontend
 
