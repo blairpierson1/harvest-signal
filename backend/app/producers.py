@@ -53,8 +53,8 @@ async def _fetch_producer_weather(latitude: float, longitude: float) -> dict:
     params = {
         "latitude": latitude,
         "longitude": longitude,
-        "daily": "temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,soil_moisture_0_to_7cm_mean,et0_fao_evapotranspiration",
-        "hourly": "relative_humidity_2m",
+        "daily": "temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,et0_fao_evapotranspiration",
+        "hourly": "relative_humidity_2m,soil_moisture_0_to_1cm",
         "start_date": start_date,
         "end_date": end_date,
         "timezone": "auto",
@@ -73,7 +73,10 @@ async def _fetch_producer_weather(latitude: float, longitude: float) -> dict:
     precip = [p for p in (daily.get("precipitation_sum") or []) if p is not None]
     humidity_hourly = [h for h in (hourly.get("relative_humidity_2m") or []) if h is not None]
 
-    soil_moisture = [s for s in (daily.get("soil_moisture_0_to_7cm_mean") or []) if s is not None]
+    # Soil moisture comes from hourly data — aggregate to overall mean
+    soil_moisture_hourly = [
+        s for s in (hourly.get("soil_moisture_0_to_1cm") or []) if s is not None
+    ]
     et0 = [e for e in (daily.get("et0_fao_evapotranspiration") or []) if e is not None]
 
     return {
@@ -82,7 +85,7 @@ async def _fetch_producer_weather(latitude: float, longitude: float) -> dict:
         "precipitation_sum": round(sum(precip), 1) if precip else 20.0,
         "precipitation_daily_avg": round(sum(precip) / len(precip), 1) if precip else 2.9,
         "relative_humidity": round(sum(humidity_hourly) / len(humidity_hourly), 1) if humidity_hourly else 70.0,
-        "soil_moisture": round(sum(soil_moisture) / len(soil_moisture), 3) if soil_moisture else 0.3,
+        "soil_moisture": round(sum(soil_moisture_hourly) / len(soil_moisture_hourly), 3) if soil_moisture_hourly else 0.3,
         "evapotranspiration": round(sum(et0) / len(et0), 1) if et0 else 3.0,
     }
 
