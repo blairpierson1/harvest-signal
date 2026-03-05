@@ -59,7 +59,6 @@ async def _fetch_producer_weather(latitude: float, longitude: float) -> dict:
 def _classify_risk(commodity: str, weather: dict) -> tuple[WeatherRisk, str]:
     """Classify weather risk for a producer country as Normal/Watch/Alert."""
     t = RISK_THRESHOLDS[commodity]
-    temp_avg = weather["temperature_avg"]
     temp_max = weather["temperature_max"]
     precip_daily = weather["precipitation_daily_avg"]
     humidity = weather["relative_humidity"]

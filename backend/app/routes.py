@@ -116,7 +116,7 @@ async def get_signals(request: Request, _auth: None = Depends(verify_api_key)):
             generated_at=datetime.now(timezone.utc).isoformat(),
         )
 
-    except Exception as e:
+    except Exception:
         logger.exception("Failed to generate signals")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again later.")
 
