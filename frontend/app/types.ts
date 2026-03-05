@@ -44,6 +44,8 @@ export interface ProducerCountry {
 
 export interface CommoditySignal {
   commodity: string;
+  icon: string;
+  unit: string;
   signal: Signal;
   confidence: Confidence;
   key_driver: string;

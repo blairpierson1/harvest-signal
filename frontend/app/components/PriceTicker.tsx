@@ -4,17 +4,10 @@ import type { PriceTrend } from "../types";
 
 interface PriceTickerProps {
   trend: PriceTrend;
-  commodity: string;
+  unit: string;
 }
 
-const commodityUnits: Record<string, string> = {
-  Coffee: "¢/lb",
-  Sugar: "¢/lb",
-  Cocoa: "$/ton",
-};
-
-export default function PriceTicker({ trend, commodity }: PriceTickerProps) {
-  const unit = commodityUnits[commodity] ?? "";
+export default function PriceTicker({ trend, unit }: PriceTickerProps) {
   const isUp = trend.direction === "up";
   const isDown = trend.direction === "down";
 

@@ -2,27 +2,14 @@
 
 from __future__ import annotations
 
+from app.commodity_config import COMMODITIES
 from app.models import Signal, Confidence, ProducerCountry, WeatherRisk
 
 
-# Thresholds for signal generation
-DROUGHT_THRESHOLDS = {
-    "Coffee": {"precip_low": 1.5, "temp_high": 30.0, "humidity_low": 50.0},
-    "Sugar": {"precip_low": 1.5, "temp_high": 35.0, "humidity_low": 45.0},
-    "Cocoa": {"precip_low": 2.0, "temp_high": 33.0, "humidity_low": 55.0},
-}
-
-FLOOD_THRESHOLDS = {
-    "Coffee": {"precip_high": 12.0, "humidity_high": 88.0},
-    "Sugar": {"precip_high": 15.0, "humidity_high": 90.0},
-    "Cocoa": {"precip_high": 14.0, "humidity_high": 90.0},
-}
-
-HEAT_STRESS_THRESHOLDS = {
-    "Coffee": 33.0,
-    "Sugar": 38.0,
-    "Cocoa": 35.0,
-}
+# Derive thresholds from central config
+DROUGHT_THRESHOLDS = {name: c["thresholds"]["drought"] for name, c in COMMODITIES.items()}
+FLOOD_THRESHOLDS = {name: c["thresholds"]["flood"] for name, c in COMMODITIES.items()}
+HEAT_STRESS_THRESHOLDS = {name: c["thresholds"]["heat_stress"] for name, c in COMMODITIES.items()}
 
 
 def analyze_region(commodity: str, region: dict) -> dict:
