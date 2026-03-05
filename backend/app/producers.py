@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -45,7 +45,7 @@ RISK_THRESHOLDS: dict[str, dict] = {
 
 async def _fetch_producer_weather(latitude: float, longitude: float) -> dict:
     """Fetch 7-day weather for a producer country's primary growing region."""
-    today = datetime.utcnow().date()
+    today = datetime.now(timezone.utc).date()
     start_date = (today - timedelta(days=6)).isoformat()
     end_date = today.isoformat()
 
@@ -127,7 +127,7 @@ async def _fetch_single_producer(commodity: str, config: dict) -> ProducerCountr
     try:
         weather = await _fetch_producer_weather(config["latitude"], config["longitude"])
     except Exception:
-        logger.exception("Failed to fetch producer data, using fallback")
+        logger.warning("Failed to fetch producer weather for %s", config["country"], exc_info=True)
         weather = {
             "temperature_avg": 25.0,
             "temperature_max": 32.0,

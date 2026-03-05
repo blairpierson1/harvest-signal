@@ -1,6 +1,14 @@
+import logging
+
 from dotenv import load_dotenv
 
 load_dotenv()  # Load .env file before anything else reads os.environ
+
+from app.logging_config import setup_logging  # noqa: E402
+
+setup_logging()
+
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,3 +34,5 @@ app.add_middleware(
 app.include_router(router)
 
 log_startup_warnings()
+
+logger.info("Harvest Signal API starting")

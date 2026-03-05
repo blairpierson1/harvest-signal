@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -90,7 +90,7 @@ async def fetch_region_weather(
     latitude: float, longitude: float
 ) -> dict:
     """Fetch 7-day weather data for a specific coordinate from Open-Meteo."""
-    today = datetime.utcnow().date()
+    today = datetime.now(timezone.utc).date()
     start_date = (today - timedelta(days=6)).isoformat()
     end_date = today.isoformat()
 
@@ -149,7 +149,12 @@ async def _fetch_single_region(region: dict) -> dict:
             **parsed,
         }
     except Exception:
-        logger.exception("Failed to fetch weather data, using fallback")
+        logger.warning(
+            "Weather API failed for %s/%s, using fallback",
+            region["region_name"],
+            region["country"],
+            exc_info=True,
+        )
         # Use fallback data if API fails
         return {
             "region_name": region["region_name"],
