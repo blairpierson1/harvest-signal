@@ -66,7 +66,7 @@ async def _fetch_alpha_vantage_price(
             logger.warning(
                 "Alpha Vantage error for %s: %s",
                 commodity,
-                data.get("Information") or data.get("Error Message"),
+                data.get("Information") or data.get("Error Message") or data.get("Note"),
             )
             return _get_estimated_price(commodity)
 

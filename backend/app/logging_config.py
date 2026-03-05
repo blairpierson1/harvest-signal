@@ -1,5 +1,6 @@
 """Structured logging configuration for Harvest Signal API."""
 
+import json
 import logging
 import sys
 from datetime import UTC, datetime
@@ -11,12 +12,12 @@ class StructuredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         timestamp = datetime.now(UTC).isoformat()
         message = record.getMessage()
-        log_line = (
-            f'{{"timestamp": "{timestamp}", '
-            f'"level": "{record.levelname}", '
-            f'"logger": "{record.name}", '
-            f'"message": "{message}"}}'
-        )
+        log_line = json.dumps({
+            "timestamp": timestamp,
+            "level": record.levelname,
+            "logger": record.name,
+            "message": message,
+        })
         if record.exc_info and not record.exc_text:
             record.exc_text = self.formatException(record.exc_info)
         if record.exc_text:
