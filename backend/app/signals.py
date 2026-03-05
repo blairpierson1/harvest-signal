@@ -7,9 +7,9 @@ from app.models import Signal, Confidence, ProducerCountry, WeatherRisk
 
 # Thresholds for signal generation
 DROUGHT_THRESHOLDS = {
-    "Coffee": {"precip_low": 1.5, "temp_high": 30.0, "humidity_low": 50.0},
-    "Sugar": {"precip_low": 1.5, "temp_high": 35.0, "humidity_low": 45.0},
-    "Cocoa": {"precip_low": 2.0, "temp_high": 33.0, "humidity_low": 55.0},
+    "Coffee": {"precip_low": 1.5, "temp_high": 30.0, "humidity_low": 50.0, "soil_moisture_low": 0.20, "et0_high": 5.0},
+    "Sugar": {"precip_low": 1.5, "temp_high": 35.0, "humidity_low": 45.0, "soil_moisture_low": 0.18, "et0_high": 6.0},
+    "Cocoa": {"precip_low": 2.0, "temp_high": 33.0, "humidity_low": 55.0, "soil_moisture_low": 0.22, "et0_high": 5.5},
 }
 
 FLOOD_THRESHOLDS = {
@@ -35,6 +35,8 @@ def analyze_region(commodity: str, region: dict) -> dict:
     temp_max = region.get("temperature_max", 0.0)
     temp_avg = region.get("temperature_avg", 0.0)
     humidity = region.get("relative_humidity", 0.0)
+    soil_moisture = region.get("soil_moisture", 0.3)
+    et0 = region.get("evapotranspiration", 3.0)
 
     drought_score = 0
     flood_score = 0
@@ -46,6 +48,14 @@ def analyze_region(commodity: str, region: dict) -> dict:
     if humidity < thresholds_drought["humidity_low"]:
         drought_score += 1
     if temp_avg > thresholds_drought["temp_high"]:
+        drought_score += 1
+
+    # Soil moisture check — low soil moisture is a strong drought indicator
+    if soil_moisture < thresholds_drought["soil_moisture_low"]:
+        drought_score += 2
+
+    # High evapotranspiration intensifies drought conditions
+    if et0 > thresholds_drought["et0_high"] and precip_daily < thresholds_drought["precip_low"] * 2:
         drought_score += 1
 
     # Flood / excess rain detection
@@ -68,6 +78,8 @@ def analyze_region(commodity: str, region: dict) -> dict:
         "temp_max": temp_max,
         "temp_avg": temp_avg,
         "humidity": humidity,
+        "soil_moisture": soil_moisture,
+        "evapotranspiration": et0,
     }
 
 
@@ -118,7 +130,7 @@ def generate_commodity_signal(
     max_heat_region = max(analyses, key=lambda a: a["heat_score"])
 
     # Determine primary signal
-    if total_drought >= 5 or (total_drought >= 3 and total_heat >= 2) or total_heat >= 4:
+    if total_drought >= 7 or (total_drought >= 4 and total_heat >= 2) or total_heat >= 4:
         # Drought/heat → supply risk → bullish for prices
         signal = Signal.BULLISH
 
@@ -153,7 +165,7 @@ def generate_commodity_signal(
         )
         confidence = Confidence.HIGH if total_flood >= 6 else Confidence.MEDIUM
 
-    elif total_drought >= 3:
+    elif total_drought >= 4:
         # Moderate drought → mild bullish
         signal = Signal.BULLISH
         driver_region = max_drought_region

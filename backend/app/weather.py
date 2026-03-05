@@ -98,7 +98,7 @@ async def fetch_region_weather(
     params = {
         "latitude": latitude,
         "longitude": longitude,
-        "daily": "temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum",
+        "daily": "temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,soil_moisture_0_to_7cm_mean,et0_fao_evapotranspiration",
         "hourly": "relative_humidity_2m",
         "start_date": start_date,
         "end_date": end_date,
@@ -125,12 +125,17 @@ def parse_weather_data(data: dict) -> dict:
         h for h in (hourly.get("relative_humidity_2m") or []) if h is not None
     ]
 
+    soil_moisture = [s for s in (daily.get("soil_moisture_0_to_7cm_mean") or []) if s is not None]
+    et0 = [e for e in (daily.get("et0_fao_evapotranspiration") or []) if e is not None]
+
     return {
         "temperature_avg": round(sum(temps_mean) / len(temps_mean), 1) if temps_mean else 0.0,
         "temperature_max": round(max(temps_max), 1) if temps_max else 0.0,
         "precipitation_sum": round(sum(precip), 1) if precip else 0.0,
         "precipitation_daily_avg": round(sum(precip) / len(precip), 1) if precip else 0.0,
         "relative_humidity": round(sum(humidity_hourly) / len(humidity_hourly), 1) if humidity_hourly else 0.0,
+        "soil_moisture": round(sum(soil_moisture) / len(soil_moisture), 3) if soil_moisture else 0.3,
+        "evapotranspiration": round(sum(et0) / len(et0), 1) if et0 else 3.0,
     }
 
 
@@ -161,6 +166,8 @@ async def _fetch_single_region(region: dict) -> dict:
             "precipitation_sum": 20.0,
             "precipitation_daily_avg": 2.9,
             "relative_humidity": 70.0,
+            "soil_moisture": 0.3,
+            "evapotranspiration": 3.0,
         }
 
 

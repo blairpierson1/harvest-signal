@@ -29,6 +29,8 @@ class RegionWeather(BaseModel):
     temperature_max: float
     precipitation_sum: float
     relative_humidity: float
+    soil_moisture: float
+    evapotranspiration: float
     condition_summary: str
 
 
@@ -58,6 +60,7 @@ class ProducerCountry(BaseModel):
     temperature_avg: float
     precipitation_sum: float
     relative_humidity: float
+    soil_moisture: float
 
 
 class CommoditySignal(BaseModel):

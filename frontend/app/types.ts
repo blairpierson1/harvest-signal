@@ -11,6 +11,8 @@ export interface RegionWeather {
   temperature_max: number;
   precipitation_sum: number;
   relative_humidity: number;
+  soil_moisture: number;
+  evapotranspiration: number;
   condition_summary: string;
 }
 
@@ -40,6 +42,7 @@ export interface ProducerCountry {
   temperature_avg: number;
   precipitation_sum: number;
   relative_humidity: number;
+  soil_moisture: number;
 }
 
 export interface CommoditySignal {
