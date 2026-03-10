@@ -9,7 +9,7 @@ Alpha Vantage is kept as a last-resort fallback for Coffee only
 import asyncio
 import logging
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 import httpx
 
@@ -63,6 +63,11 @@ async def _fetch_alpha_vantage_price(
 
         # Check for API error / rate-limit messages
         if "Information" in data or "Error Message" in data or "Note" in data:
+            logger.warning(
+                "Alpha Vantage error for %s: %s",
+                commodity,
+                data.get("Information") or data.get("Error Message") or data.get("Note"),
+            )
             return _get_estimated_price(commodity)
 
         data_points = data.get("data", [])
@@ -96,7 +101,7 @@ async def _fetch_alpha_vantage_price(
         )
 
     except Exception:
-        logger.exception("Failed to fetch price from Alpha Vantage, using estimate")
+        logger.warning("Alpha Vantage request failed for %s", commodity, exc_info=True)
         return _get_estimated_price(commodity)
 
 
@@ -144,7 +149,7 @@ async def _fetch_yahoo_price(
         )
 
     except Exception:
-        logger.exception("Failed to fetch price from Yahoo Finance, using estimate")
+        logger.warning("Yahoo Finance request failed for %s", commodity, exc_info=True)
         return _get_estimated_price(commodity)
 
 
@@ -166,6 +171,9 @@ async def fetch_price_trend(commodity: str) -> PriceTrend:
         av_result = await _fetch_alpha_vantage_price(commodity, av_config)
         if av_result.source != "estimated":
             return av_result
+
+    if result.source == "estimated":
+        logger.warning("All price sources failed for %s, using estimated price", commodity)
 
     return result
 
@@ -252,7 +260,7 @@ async def fetch_price_history(commodity: str) -> PriceHistory:
         points: list[PriceHistoryPoint] = []
         for ts, close in zip(timestamps, closes_raw):
             if close is not None:
-                date_str = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+                date_str = datetime.fromtimestamp(ts, tz=UTC).strftime("%Y-%m-%d")
                 points.append(PriceHistoryPoint(date=date_str, close=round(close, 2)))
 
         trend_label = _compute_trend_label(points)

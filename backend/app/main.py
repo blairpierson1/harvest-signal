@@ -2,13 +2,21 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Load .env file before anything else reads os.environ
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
+import logging  # noqa: E402
 
-from app.dependencies import ALLOWED_ORIGINS, limiter, log_startup_warnings
-from app.routes import router
+from app.logging_config import setup_logging  # noqa: E402
+
+setup_logging()
+
+logger = logging.getLogger(__name__)
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from slowapi import _rate_limit_exceeded_handler  # noqa: E402
+from slowapi.errors import RateLimitExceeded  # noqa: E402
+
+from app.dependencies import ALLOWED_ORIGINS, limiter, log_startup_warnings  # noqa: E402
+from app.routes import router  # noqa: E402
 
 app = FastAPI(title="Harvest Signal API", version="1.0.0")
 
@@ -26,3 +34,5 @@ app.add_middleware(
 app.include_router(router)
 
 log_startup_warnings()
+
+logger.info("Harvest Signal API starting")
