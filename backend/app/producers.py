@@ -37,9 +37,9 @@ PRODUCER_CONFIG: dict[str, list[dict]] = {
 
 # Commodity-specific thresholds for weather risk classification.
 RISK_THRESHOLDS: dict[str, dict] = {
-    "Coffee": {"temp_watch": 28.0, "temp_alert": 32.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 10.0, "precip_high_alert": 14.0, "humidity_low": 50.0},
-    "Sugar": {"temp_watch": 32.0, "temp_alert": 36.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 12.0, "precip_high_alert": 16.0, "humidity_low": 45.0},
-    "Cocoa": {"temp_watch": 30.0, "temp_alert": 34.0, "precip_low_watch": 2.5, "precip_low_alert": 1.5, "precip_high_watch": 12.0, "precip_high_alert": 15.0, "humidity_low": 55.0},
+    "Coffee": {"temp_watch": 28.0, "temp_alert": 32.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 10.0, "precip_high_alert": 14.0, "humidity_low": 50.0, "soil_moisture_low_watch": 0.20, "soil_moisture_low_alert": 0.12},
+    "Sugar": {"temp_watch": 32.0, "temp_alert": 36.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 12.0, "precip_high_alert": 16.0, "humidity_low": 45.0, "soil_moisture_low_watch": 0.18, "soil_moisture_low_alert": 0.10},
+    "Cocoa": {"temp_watch": 30.0, "temp_alert": 34.0, "precip_low_watch": 2.5, "precip_low_alert": 1.5, "precip_high_watch": 12.0, "precip_high_alert": 15.0, "humidity_low": 55.0, "soil_moisture_low_watch": 0.22, "soil_moisture_low_alert": 0.14},
 }
 
 
@@ -53,8 +53,8 @@ async def _fetch_producer_weather(latitude: float, longitude: float) -> dict:
     params = {
         "latitude": latitude,
         "longitude": longitude,
-        "daily": "temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum",
-        "hourly": "relative_humidity_2m",
+        "daily": "temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,et0_fao_evapotranspiration",
+        "hourly": "relative_humidity_2m,soil_moisture_0_to_1cm",
         "start_date": start_date,
         "end_date": end_date,
         "timezone": "auto",
@@ -73,12 +73,20 @@ async def _fetch_producer_weather(latitude: float, longitude: float) -> dict:
     precip = [p for p in (daily.get("precipitation_sum") or []) if p is not None]
     humidity_hourly = [h for h in (hourly.get("relative_humidity_2m") or []) if h is not None]
 
+    # Soil moisture comes from hourly data — aggregate to overall mean
+    soil_moisture_hourly = [
+        s for s in (hourly.get("soil_moisture_0_to_1cm") or []) if s is not None
+    ]
+    et0 = [e for e in (daily.get("et0_fao_evapotranspiration") or []) if e is not None]
+
     return {
         "temperature_avg": round(sum(temps_mean) / len(temps_mean), 1) if temps_mean else 25.0,
         "temperature_max": round(max(temps_max), 1) if temps_max else 32.0,
         "precipitation_sum": round(sum(precip), 1) if precip else 20.0,
         "precipitation_daily_avg": round(sum(precip) / len(precip), 1) if precip else 2.9,
         "relative_humidity": round(sum(humidity_hourly) / len(humidity_hourly), 1) if humidity_hourly else 70.0,
+        "soil_moisture": round(sum(soil_moisture_hourly) / len(soil_moisture_hourly), 3) if soil_moisture_hourly else 0.3,
+        "evapotranspiration": round(sum(et0) / len(et0), 1) if et0 else 3.0,
     }
 
 
@@ -115,6 +123,13 @@ def _classify_risk(commodity: str, weather: dict) -> tuple[WeatherRisk, str]:
     if humidity < t["humidity_low"]:
         watches.append(f"Low humidity ({humidity:.0f}%)")
 
+    # Soil moisture checks
+    soil_moisture = weather.get("soil_moisture", 0.3)
+    if soil_moisture < t["soil_moisture_low_alert"]:
+        alerts.append(f"Critical soil dryness ({soil_moisture:.2f} m\u00b3/m\u00b3)")
+    elif soil_moisture < t["soil_moisture_low_watch"]:
+        watches.append(f"Low soil moisture ({soil_moisture:.2f} m\u00b3/m\u00b3)")
+
     if alerts:
         return WeatherRisk.ALERT, "; ".join(alerts)
     elif watches:
@@ -134,6 +149,8 @@ async def _fetch_single_producer(commodity: str, config: dict) -> ProducerCountr
             "precipitation_sum": 20.0,
             "precipitation_daily_avg": 2.9,
             "relative_humidity": 70.0,
+            "soil_moisture": 0.3,
+            "evapotranspiration": 3.0,
         }
 
     risk, detail = _classify_risk(commodity, weather)
@@ -146,6 +163,7 @@ async def _fetch_single_producer(commodity: str, config: dict) -> ProducerCountr
         temperature_avg=weather["temperature_avg"],
         precipitation_sum=weather["precipitation_sum"],
         relative_humidity=weather["relative_humidity"],
+        soil_moisture=weather["soil_moisture"],
     )
 
 

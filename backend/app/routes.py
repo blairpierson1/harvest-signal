@@ -65,6 +65,8 @@ async def get_signals(request: Request, _auth: None = Depends(verify_api_key)):
                         temperature_max=region["temperature_max"],
                         precipitation_sum=region["precipitation_sum"],
                         relative_humidity=region["relative_humidity"],
+                        soil_moisture=region.get("soil_moisture", 0.3),
+                        evapotranspiration=region.get("evapotranspiration", 3.0),
                         condition_summary=condition,
                     )
                 )

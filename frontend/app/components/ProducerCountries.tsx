@@ -80,6 +80,7 @@ export default function ProducerCountries({ producers }: ProducerCountriesProps)
                     <span>{p.temperature_avg}°C</span>
                     <span>{p.precipitation_sum}mm</span>
                     <span>{p.relative_humidity}% RH</span>
+                    <span>{p.soil_moisture.toFixed(2)} m³/m³</span>
                   </div>
                 </div>
               </div>

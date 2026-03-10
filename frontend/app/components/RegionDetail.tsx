@@ -43,6 +43,18 @@ export default function RegionDetail({ regions }: RegionDetailProps) {
                   {region.relative_humidity.toFixed(0)}%
                 </span>
               </div>
+              <div className="flex flex-col items-end">
+                <span className="text-text-muted">Soil</span>
+                <span className="text-text-secondary font-medium tabular-nums">
+                  {region.soil_moisture.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-text-muted">ET0</span>
+                <span className="text-text-secondary font-medium tabular-nums">
+                  {region.evapotranspiration.toFixed(1)}mm
+                </span>
+              </div>
               <div className="hidden sm:flex flex-col items-end min-w-24">
                 <span className="text-text-muted">Status</span>
                 <span className="text-accent-cyan text-right">
