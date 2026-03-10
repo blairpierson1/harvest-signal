@@ -6,84 +6,15 @@ from datetime import datetime, timedelta
 
 import httpx
 
+from app.commodity_config import COMMODITIES
+from app.utils import fetch_with_fallback
+
 logger = logging.getLogger(__name__)
 
-# Growing region coordinates
-COMMODITY_REGIONS = {
-    "Coffee": [
-        {
-            "region_name": "Minas Gerais",
-            "country": "Brazil",
-            "latitude": -18.51,
-            "longitude": -44.55,
-        },
-        {
-            "region_name": "São Paulo State",
-            "country": "Brazil",
-            "latitude": -22.19,
-            "longitude": -48.79,
-        },
-        {
-            "region_name": "Central Highlands",
-            "country": "Vietnam",
-            "latitude": 14.35,
-            "longitude": 108.00,
-        },
-    ],
-    "Sugar": [
-        {
-            "region_name": "São Paulo State",
-            "country": "Brazil",
-            "latitude": -22.19,
-            "longitude": -48.79,
-        },
-        {
-            "region_name": "Ribeirão Preto",
-            "country": "Brazil",
-            "latitude": -21.18,
-            "longitude": -47.81,
-        },
-        {
-            "region_name": "Uttar Pradesh",
-            "country": "India",
-            "latitude": 27.18,
-            "longitude": 80.35,
-        },
-    ],
-    "Cocoa": [
-        {
-            "region_name": "Ashanti Region",
-            "country": "Ghana",
-            "latitude": 6.75,
-            "longitude": -1.52,
-        },
-        {
-            "region_name": "Western Region",
-            "country": "Ghana",
-            "latitude": 5.50,
-            "longitude": -2.50,
-        },
-        {
-            "region_name": "Bas-Sassandra",
-            "country": "Ivory Coast",
-            "latitude": 5.28,
-            "longitude": -6.58,
-        },
-    ],
-}
-
-# Typical monthly averages for reference (simplified baselines)
-BASELINE_TEMP = {
-    "Coffee": {"Brazil": 23.0, "Vietnam": 24.0},
-    "Sugar": {"Brazil": 24.0, "India": 28.0},
-    "Cocoa": {"Ghana": 27.0, "Ivory Coast": 27.0},
-}
-
-BASELINE_PRECIP = {
-    "Coffee": {"Brazil": 5.0, "Vietnam": 6.0},
-    "Sugar": {"Brazil": 4.5, "India": 3.0},
-    "Cocoa": {"Ghana": 5.5, "Ivory Coast": 6.0},
-}
+# Derive legacy structures from the central config
+COMMODITY_REGIONS = {name: c["regions"] for name, c in COMMODITIES.items()}
+BASELINE_TEMP = {name: c["baselines"]["temp"] for name, c in COMMODITIES.items()}
+BASELINE_PRECIP = {name: c["baselines"]["precip"] for name, c in COMMODITIES.items()}
 
 
 async def fetch_region_weather(
@@ -134,34 +65,33 @@ def parse_weather_data(data: dict) -> dict:
     }
 
 
+_WEATHER_FALLBACK = {
+    "temperature_avg": 25.0,
+    "temperature_max": 32.0,
+    "precipitation_sum": 20.0,
+    "precipitation_daily_avg": 2.9,
+    "relative_humidity": 70.0,
+}
+
+
+async def _fetch_and_parse(latitude: float, longitude: float) -> dict:
+    """Fetch weather and parse it — may raise on network errors."""
+    raw_data = await fetch_region_weather(latitude, longitude)
+    return parse_weather_data(raw_data)
+
+
 async def _fetch_single_region(region: dict) -> dict:
     """Fetch and parse weather for a single region with fallback."""
-    try:
-        raw_data = await fetch_region_weather(
-            region["latitude"], region["longitude"]
-        )
-        parsed = parse_weather_data(raw_data)
-        return {
-            "region_name": region["region_name"],
-            "country": region["country"],
-            "latitude": region["latitude"],
-            "longitude": region["longitude"],
-            **parsed,
-        }
-    except Exception:
-        logger.exception("Failed to fetch weather data, using fallback")
-        # Use fallback data if API fails
-        return {
-            "region_name": region["region_name"],
-            "country": region["country"],
-            "latitude": region["latitude"],
-            "longitude": region["longitude"],
-            "temperature_avg": 25.0,
-            "temperature_max": 32.0,
-            "precipitation_sum": 20.0,
-            "precipitation_daily_avg": 2.9,
-            "relative_humidity": 70.0,
-        }
+    parsed = await fetch_with_fallback(
+        _fetch_and_parse, _WEATHER_FALLBACK, region["latitude"], region["longitude"]
+    )
+    return {
+        "region_name": region["region_name"],
+        "country": region["country"],
+        "latitude": region["latitude"],
+        "longitude": region["longitude"],
+        **parsed,
+    }
 
 
 async def get_all_weather() -> dict[str, list[dict]]:

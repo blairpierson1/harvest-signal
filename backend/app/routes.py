@@ -14,14 +14,39 @@ from app.models import (
     PriceTrend,
     RegionWeather,
 )
-from app.weather import get_all_weather
+from app.cache import async_ttl_cache
+from app.commodity_config import COMMODITIES
+from app.weather import get_all_weather as _get_all_weather
 from app.signals import generate_commodity_signal, generate_condition_summary, analyze_region
-from app.prices import fetch_all_prices, fetch_all_price_histories
-from app.producers import fetch_all_producers
+from app.prices import fetch_all_prices as _fetch_all_prices
+from app.prices import fetch_all_price_histories as _fetch_all_price_histories
+from app.producers import fetch_all_producers as _fetch_all_producers
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Cached wrappers for the four main data-fetching functions (5-min TTL).
+
+
+@async_ttl_cache()
+async def get_all_weather():
+    return await _get_all_weather()
+
+
+@async_ttl_cache()
+async def fetch_all_prices():
+    return await _fetch_all_prices()
+
+
+@async_ttl_cache()
+async def fetch_all_price_histories():
+    return await _fetch_all_price_histories()
+
+
+@async_ttl_cache()
+async def fetch_all_producers():
+    return await _fetch_all_producers()
 
 
 @router.get("/")
@@ -69,8 +94,11 @@ async def get_signals(request: Request, _auth: None = Depends(verify_api_key)):
                     )
                 )
 
+            cfg = COMMODITIES.get(commodity, {})
             commodity_signal = CommoditySignal(
                 commodity=commodity,
+                icon=cfg.get("icon", ""),
+                unit=cfg.get("unit", ""),
                 signal=signal,
                 confidence=confidence,
                 key_driver=key_driver,
@@ -88,7 +116,7 @@ async def get_signals(request: Request, _auth: None = Depends(verify_api_key)):
             generated_at=datetime.now(timezone.utc).isoformat(),
         )
 
-    except Exception as e:
+    except Exception:
         logger.exception("Failed to generate signals")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again later.")
 

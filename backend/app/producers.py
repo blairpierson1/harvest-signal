@@ -6,41 +6,15 @@ from datetime import datetime, timedelta
 
 import httpx
 
+from app.commodity_config import COMMODITIES
 from app.models import ProducerCountry, WeatherRisk
+from app.utils import fetch_with_fallback
 
 logger = logging.getLogger(__name__)
 
-# Top 5 producing countries with primary growing region coordinates and global share.
-PRODUCER_CONFIG: dict[str, list[dict]] = {
-    "Coffee": [
-        {"country": "Brazil", "share_percent": 37.4, "latitude": -18.51, "longitude": -44.55},
-        {"country": "Vietnam", "share_percent": 17.4, "latitude": 14.35, "longitude": 108.00},
-        {"country": "Colombia", "share_percent": 7.2, "latitude": 4.60, "longitude": -75.80},
-        {"country": "Indonesia", "share_percent": 6.6, "latitude": -2.50, "longitude": 115.00},
-        {"country": "Ethiopia", "share_percent": 4.5, "latitude": 7.00, "longitude": 38.00},
-    ],
-    "Sugar": [
-        {"country": "Brazil", "share_percent": 21.0, "latitude": -22.19, "longitude": -48.79},
-        {"country": "India", "share_percent": 18.5, "latitude": 27.18, "longitude": 80.35},
-        {"country": "Thailand", "share_percent": 5.8, "latitude": 14.88, "longitude": 100.00},
-        {"country": "China", "share_percent": 5.5, "latitude": 23.83, "longitude": 108.33},
-        {"country": "Pakistan", "share_percent": 3.6, "latitude": 30.20, "longitude": 71.50},
-    ],
-    "Cocoa": [
-        {"country": "Ivory Coast", "share_percent": 38.2, "latitude": 5.28, "longitude": -6.58},
-        {"country": "Ghana", "share_percent": 17.0, "latitude": 6.75, "longitude": -1.52},
-        {"country": "Indonesia", "share_percent": 5.1, "latitude": -1.50, "longitude": 120.50},
-        {"country": "Nigeria", "share_percent": 4.8, "latitude": 7.50, "longitude": 3.90},
-        {"country": "Ecuador", "share_percent": 4.5, "latitude": -1.80, "longitude": -79.50},
-    ],
-}
-
-# Commodity-specific thresholds for weather risk classification.
-RISK_THRESHOLDS: dict[str, dict] = {
-    "Coffee": {"temp_watch": 28.0, "temp_alert": 32.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 10.0, "precip_high_alert": 14.0, "humidity_low": 50.0},
-    "Sugar": {"temp_watch": 32.0, "temp_alert": 36.0, "precip_low_watch": 2.0, "precip_low_alert": 1.0, "precip_high_watch": 12.0, "precip_high_alert": 16.0, "humidity_low": 45.0},
-    "Cocoa": {"temp_watch": 30.0, "temp_alert": 34.0, "precip_low_watch": 2.5, "precip_low_alert": 1.5, "precip_high_watch": 12.0, "precip_high_alert": 15.0, "humidity_low": 55.0},
-}
+# Derive producer config and risk thresholds from central config
+PRODUCER_CONFIG: dict[str, list[dict]] = {name: c["producers"] for name, c in COMMODITIES.items()}
+RISK_THRESHOLDS: dict[str, dict] = {name: c["thresholds"]["risk"] for name, c in COMMODITIES.items()}
 
 
 async def _fetch_producer_weather(latitude: float, longitude: float) -> dict:
@@ -85,7 +59,6 @@ async def _fetch_producer_weather(latitude: float, longitude: float) -> dict:
 def _classify_risk(commodity: str, weather: dict) -> tuple[WeatherRisk, str]:
     """Classify weather risk for a producer country as Normal/Watch/Alert."""
     t = RISK_THRESHOLDS[commodity]
-    temp_avg = weather["temperature_avg"]
     temp_max = weather["temperature_max"]
     precip_daily = weather["precipitation_daily_avg"]
     humidity = weather["relative_humidity"]
@@ -122,19 +95,23 @@ def _classify_risk(commodity: str, weather: dict) -> tuple[WeatherRisk, str]:
     return WeatherRisk.NORMAL, "Conditions within normal range"
 
 
+_PRODUCER_WEATHER_FALLBACK = {
+    "temperature_avg": 25.0,
+    "temperature_max": 32.0,
+    "precipitation_sum": 20.0,
+    "precipitation_daily_avg": 2.9,
+    "relative_humidity": 70.0,
+}
+
+
 async def _fetch_single_producer(commodity: str, config: dict) -> ProducerCountry:
     """Fetch weather and classify risk for a single producer country."""
-    try:
-        weather = await _fetch_producer_weather(config["latitude"], config["longitude"])
-    except Exception:
-        logger.exception("Failed to fetch producer data, using fallback")
-        weather = {
-            "temperature_avg": 25.0,
-            "temperature_max": 32.0,
-            "precipitation_sum": 20.0,
-            "precipitation_daily_avg": 2.9,
-            "relative_humidity": 70.0,
-        }
+    weather = await fetch_with_fallback(
+        _fetch_producer_weather,
+        _PRODUCER_WEATHER_FALLBACK,
+        config["latitude"],
+        config["longitude"],
+    )
 
     risk, detail = _classify_risk(commodity, weather)
 

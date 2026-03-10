@@ -13,12 +13,6 @@ interface CommodityCardProps {
   data: CommoditySignal;
 }
 
-const commodityIcons: Record<string, string> = {
-  Coffee: "\u2615",
-  Sugar: "\uD83C\uDF6C",
-  Cocoa: "\uD83C\uDF6B",
-};
-
 const signalBorderColor: Record<string, string> = {
   Bullish: "border-l-signal-bullish",
   Bearish: "border-l-signal-bearish",
@@ -27,7 +21,7 @@ const signalBorderColor: Record<string, string> = {
 
 export default function CommodityCard({ data }: CommodityCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const icon = commodityIcons[data.commodity] ?? "\uD83D\uDCC8";
+  const icon = data.icon || "\uD83D\uDCC8";
   const borderColor = signalBorderColor[data.signal] ?? "border-l-navy-600";
 
   return (
@@ -67,7 +61,7 @@ export default function CommodityCard({ data }: CommodityCardProps) {
 
         {/* Price + Confidence Row */}
         <div className="flex items-center justify-between mb-4">
-          <PriceTicker trend={data.price_trend} commodity={data.commodity} />
+          <PriceTicker trend={data.price_trend} unit={data.unit} />
           <ConfidenceMeter confidence={data.confidence} />
         </div>
 

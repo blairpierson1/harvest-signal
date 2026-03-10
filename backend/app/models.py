@@ -62,6 +62,8 @@ class ProducerCountry(BaseModel):
 
 class CommoditySignal(BaseModel):
     commodity: str
+    icon: str = ""
+    unit: str = ""
     signal: Signal
     confidence: Confidence
     key_driver: str

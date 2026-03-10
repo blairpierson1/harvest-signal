@@ -13,6 +13,7 @@ from datetime import datetime
 
 import httpx
 
+from app.commodity_config import COMMODITIES
 from app.models import PriceHistory, PriceHistoryPoint, PriceTrend
 
 logger = logging.getLogger(__name__)
@@ -20,20 +21,19 @@ logger = logging.getLogger(__name__)
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 YAHOO_FINANCE_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 
-# Routing table: Yahoo Finance is primary for all commodities.
-# Alpha Vantage is a last-resort fallback for Coffee only.
+# Derive routing table and symbol map from central config
 COMMODITY_CONFIG: dict[str, dict[str, str]] = {
-    "Coffee": {"source": "yahoo", "symbol": "KC=F", "av_fallback_function": "COFFEE"},
-    "Sugar": {"source": "yahoo", "symbol": "SB=F"},
-    "Cocoa": {"source": "yahoo", "symbol": "CC=F"},
+    name: {
+        "source": "yahoo",
+        "symbol": c["ticker"],
+        **({
+            "av_fallback_function": c["av_fallback_function"],
+        } if c.get("av_fallback_function") else {}),
+    }
+    for name, c in COMMODITIES.items()
 }
 
-# Yahoo Finance symbols for 30-day price history (all commodities).
-YAHOO_SYMBOLS: dict[str, str] = {
-    "Coffee": "KC=F",
-    "Sugar": "SB=F",
-    "Cocoa": "CC=F",
-}
+YAHOO_SYMBOLS: dict[str, str] = {name: c["ticker"] for name, c in COMMODITIES.items()}
 
 
 def _get_api_key() -> str | None:
@@ -172,27 +172,15 @@ async def fetch_price_trend(commodity: str) -> PriceTrend:
 
 def _get_estimated_price(commodity: str) -> PriceTrend:
     """Return estimated commodity prices as fallback when APIs fail."""
-    estimates = {
-        "Coffee": PriceTrend(
-            current_price=365.00,
-            change_percent=0.0,
-            direction="flat",
-            source="estimated",
-        ),
-        "Sugar": PriceTrend(
-            current_price=14.00,
-            change_percent=0.0,
-            direction="flat",
-            source="estimated",
-        ),
-        "Cocoa": PriceTrend(
-            current_price=3050.00,
-            change_percent=0.0,
-            direction="flat",
-            source="estimated",
-        ),
-    }
-    return estimates.get(commodity, PriceTrend())
+    config = COMMODITIES.get(commodity)
+    if not config:
+        return PriceTrend()
+    return PriceTrend(
+        current_price=config["estimated_price"],
+        change_percent=0.0,
+        direction="flat",
+        source="estimated",
+    )
 
 
 async def fetch_all_prices() -> dict[str, PriceTrend]:
