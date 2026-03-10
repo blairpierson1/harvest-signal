@@ -51,7 +51,7 @@ Country-level weather alerts from top producing countries can also elevate a Neu
 - **Open-Meteo API** for weather data (free, no key needed)
 - **Yahoo Finance** for commodity futures prices (primary source)
 - **Alpha Vantage** as last-resort fallback for Coffee pricing
-- **NewsAPI** for commodity news headlines (requires API key)
+- **NewsAPI** for commodity news headlines (planned, not yet implemented)
 - **httpx** for async HTTP requests
 - **Pydantic** for data models
 - All API calls parallelized via `asyncio.gather()`
@@ -82,7 +82,7 @@ poetry install
 
 # (Optional) Create .env file for API keys and configuration
 cat > .env << EOF
-NEWSAPI_KEY=your_newsapi_key_here
+# NEWSAPI_KEY=your_newsapi_key_here        # Not yet implemented
 ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key_here
 ALLOWED_ORIGINS=http://localhost:3000
 API_KEY=
@@ -92,7 +92,7 @@ EOF
 poetry run fastapi dev app/main.py
 ```
 
-The backend runs at `http://localhost:8000`. Weather data and Yahoo Finance prices work without any API keys. The news section requires a `NEWSAPI_KEY` from [newsapi.org](https://newsapi.org/) (free tier: 100 requests/day).
+The backend runs at `http://localhost:8000`. Weather data and Yahoo Finance prices work without any API keys. Alpha Vantage is an optional last-resort fallback for Coffee pricing only.
 
 ### Frontend
 
@@ -124,7 +124,7 @@ Produces a static export in `frontend/out/` deployable to any static hosting pro
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEWSAPI_KEY` | Optional | [NewsAPI.org](https://newsapi.org/) key for news headlines. Without it, the news section is empty. |
+| `NEWSAPI_KEY` | Optional | [NewsAPI.org](https://newsapi.org/) key for news headlines. Not yet implemented. |
 | `ALPHA_VANTAGE_API_KEY` | Optional | [Alpha Vantage](https://www.alphavantage.co/) key, last-resort fallback for Coffee pricing only. |
 | `ALLOWED_ORIGINS` | Optional | Comma-separated list of allowed CORS origins. Defaults to `http://localhost:3000`. |
 | `API_KEY` | Optional | API key for authenticating requests to `/api/signals`. If not set, authentication is disabled (convenient for local dev). Clients pass the key via `X-API-Key` header or `Authorization: Bearer <key>`. |
@@ -134,25 +134,37 @@ Produces a static export in `frontend/out/` deployable to any static hosting pro
 
 ```
 harvest-signal/
+├── .gitignore
+├── LICENSE
+├── README.md
 ├── backend/
 │   ├── app/
+│   │   ├── __init__.py
+│   │   ├── dependencies.py  # Auth, rate limiting, CORS config
 │   │   ├── main.py          # FastAPI app with CORS
-│   │   ├── routes.py        # /api/signals endpoint
 │   │   ├── models.py        # Pydantic data models
-│   │   ├── weather.py       # Open-Meteo API integration
 │   │   ├── prices.py        # Yahoo Finance + Alpha Vantage
-│   │   ├── signals.py       # Signal generation logic
-│   │   ├── forecast.py      # Price forecast direction
 │   │   ├── producers.py     # Top producing countries + weather
-│   │   └── news.py          # NewsAPI integration
+│   │   ├── routes.py        # /api/signals endpoint
+│   │   ├── signals.py       # Signal generation logic
+│   │   └── weather.py       # Open-Meteo API integration
 │   └── pyproject.toml
-├── frontend/
-│   ├── app/
-│   │   ├── components/      # React components
-│   │   ├── types.ts         # TypeScript interfaces
-│   │   ├── layout.tsx        # Root layout
-│   │   └── page.tsx          # Main page
-│   ├── next.config.ts
-│   └── package.json
-└── README.md
+└── frontend/
+    ├── app/
+    │   ├── components/
+    │   │   ├── CommodityCard.tsx
+    │   │   ├── ConfidenceMeter.tsx
+    │   │   ├── Dashboard.tsx
+    │   │   ├── PriceTicker.tsx
+    │   │   ├── ProducerCountries.tsx
+    │   │   ├── RegionDetail.tsx
+    │   │   ├── SignalBadge.tsx
+    │   │   └── SparklineChart.tsx
+    │   ├── globals.css
+    │   ├── layout.tsx
+    │   ├── page.tsx
+    │   └── types.ts
+    ├── next.config.ts
+    ├── package.json
+    └── tsconfig.json
 ```
