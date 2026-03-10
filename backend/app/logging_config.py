@@ -11,11 +11,17 @@ class StructuredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         timestamp = datetime.fromtimestamp(record.created, tz=UTC).isoformat()
         message = record.getMessage()
+        # Escape special characters to produce valid JSON
+        escaped = (
+            message.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", "\\n")
+        )
         log_line = (
             f'{{"timestamp": "{timestamp}", '
             f'"level": "{record.levelname}", '
             f'"logger": "{record.name}", '
-            f'"message": "{message}"}}'
+            f'"message": "{escaped}"}}'
         )
         if record.exc_info and not record.exc_text:
             record.exc_text = self.formatException(record.exc_info)
